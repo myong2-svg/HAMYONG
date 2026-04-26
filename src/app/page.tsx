@@ -361,6 +361,7 @@ export default function DashboardPage() {
             <div className="text-xl font-bold text-slate-800">{formatCurrency(data.safebox)}</div>
           )}
           <div className="text-xs text-slate-400 mt-1">카카오뱅크 세이프박스</div>
+          <div className="text-xs text-slate-300 mt-0.5 font-mono">3333-31-0824891</div>
         </div>
 
         {/* 통장잔액 */}
@@ -412,6 +413,7 @@ export default function DashboardPage() {
               </button>
             )}
           </div>
+          <div className="text-xs text-slate-300 mt-1 font-mono">3333-09-9551001</div>
         </div>
 
         {/* 총액 */}
