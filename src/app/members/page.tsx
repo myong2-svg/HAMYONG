@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { formatDate } from "@/lib/utils";
-import { UserPlus, Phone, Mail, Shield, User, PenLine, X, MapPin, ChevronDown } from "lucide-react";
+import { UserPlus, Phone, Mail, Shield, User, PenLine, X, MapPin, ChevronDown, Lock, Unlock } from "lucide-react";
+import { useAdminAuth } from "@/lib/useAdminAuth";
 
 interface Member {
   id: number;
@@ -36,6 +37,13 @@ export default function MembersPage() {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  const {
+    isAdmin, showModal, passwordInput, setPasswordInput,
+    error, storedPass, setupInput, setSetupInput,
+    setupConfirm, setSetupConfirm, setupError,
+    openModal, closeModal, verify, setup, logout,
+  } = useAdminAuth();
 
   const load = () =>
     fetch("/api/members").then((r) => r.json()).then(setMembers);
@@ -91,22 +99,89 @@ export default function MembersPage() {
 
   return (
     <div className="space-y-6">
+      {/* 관리자 모달 */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-80">
+            {storedPass === "" ? (
+              <>
+                <h2 className="font-bold text-slate-800 mb-1">관리자 비밀번호 설정</h2>
+                <p className="text-xs text-slate-500 mb-4">처음 사용 시 비밀번호를 설정합니다.</p>
+                <input
+                  type="password"
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="새 비밀번호"
+                  value={setupInput}
+                  onChange={(e) => setSetupInput(e.target.value)}
+                />
+                <input
+                  type="password"
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="비밀번호 확인"
+                  value={setupConfirm}
+                  onChange={(e) => setSetupConfirm(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && setup()}
+                />
+                {setupError && <p className="text-xs text-red-500 mb-2">{setupError}</p>}
+                <div className="flex gap-2">
+                  <button onClick={closeModal} className="flex-1 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">취소</button>
+                  <button onClick={setup} className="flex-1 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700">설정</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="font-bold text-slate-800 mb-4">관리자 인증</h2>
+                <input
+                  type="password"
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="비밀번호 입력"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && verify()}
+                  autoFocus
+                />
+                {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
+                <div className="flex gap-2">
+                  <button onClick={closeModal} className="flex-1 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">취소</button>
+                  <button onClick={verify} className="flex-1 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700">확인</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">회원 관리</h1>
           <p className="text-slate-500 text-sm mt-1">활성 {active.length}명 · 비활성 {inactive.length}명</p>
         </div>
-        <button
-          onClick={() => { setShowForm(true); setForm(emptyForm); setEditingId(null); }}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          <UserPlus className="w-4 h-4" />
-          회원 추가
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={isAdmin ? logout : openModal}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isAdmin
+                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            {isAdmin ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+            {isAdmin ? "관리자" : "잠김"}
+          </button>
+          {isAdmin && (
+            <button
+              onClick={() => { setShowForm(true); setForm(emptyForm); setEditingId(null); }}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              <UserPlus className="w-4 h-4" />
+              회원 추가
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 추가/수정 폼 */}
-      {showForm && (
+      {showForm && isAdmin && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-slate-700">
@@ -285,18 +360,22 @@ export default function MembersPage() {
                     </td>
                     <td className="px-5 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => startEdit(m)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                        >
-                          <PenLine className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => deleteMember(m.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => startEdit(m)}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                            >
+                              <PenLine className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => deleteMember(m.id)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
                         <ChevronDown className={`w-3.5 h-3.5 text-slate-300 transition-transform ${expandedId === m.id ? "rotate-180" : ""}`} />
                       </div>
                     </td>
