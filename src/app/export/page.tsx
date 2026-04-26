@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import type { ComponentType } from "react";
 import { Download, FileSpreadsheet, Users, CreditCard, Receipt, Fish, Lock, Unlock } from "lucide-react";
 import { useAdminAuth } from "@/lib/useAdminAuth";
 
 type ExportType = "all" | "members" | "fees" | "expenses" | "trips";
 
-const EXPORT_OPTIONS: { value: ExportType; icon: React.ComponentType<{ className?: string }>; label: string; desc: string; color: string }[] = [
+const EXPORT_OPTIONS: { value: ExportType; icon: ComponentType<{ className?: string }>; label: string; desc: string; color: string }[] = [
   { value: "all", icon: FileSpreadsheet, label: "전체 데이터", desc: "회원, 회비, 지출, 일정 모두 포함", color: "text-blue-600" },
   { value: "members", icon: Users, label: "회원 명단", desc: "이름, 연락처, 계좌번호 등", color: "text-indigo-600" },
   { value: "fees", icon: CreditCard, label: "회비 내역", desc: "연도/월별 납부 현황", color: "text-green-600" },
