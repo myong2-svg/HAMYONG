@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Member {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  birthDate String?
+  bankInfo  String?
+  joinDate  DateTime @default(now())
+  role      String   @default("member")
+  active    Boolean  @default(true)
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fees        Fee[]
+  expenses    Expense[]
+  participants TripParticipant[]
+}
+
+model Fee {
+  id       Int      @id @default(autoincrement())
+  memberId Int
+  amount   Int
+  year     Int
+  month    Int
+  status   String   @default("unpaid")
+  paidAt   DateTime?
+  note     String?
+  createdAt DateTime @default(now())
+
+  member Member @relation(fields: [memberId], references: [id])
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  title       String
+  amount      Int
+  category    String
+  date        DateTime
+  description String?
+  paidById    Int?
+  tripId      Int?
+  createdAt   DateTime @default(now())
+
+  paidBy Member? @relation(fields: [paidById], references: [id])
+  trip   Trip?   @relation(fields: [tripId], references: [id])
+}
+
+model Trip {
+  id          Int      @id @default(autoincrement())
+  title       String
+  location    String
+  date        DateTime
+  description String?
+  status      String   @default("planned")
+  createdAt   DateTime @default(now())
+
+  expenses    Expense[]
+  participants TripParticipant[]
+}
+
+model TripParticipant {
+  id       Int @id @default(autoincrement())
+  tripId   Int
+  memberId Int
+  paid     Boolean @default(false)
+  amount   Int     @default(0)
+
+  trip   Trip   @relation(fields: [tripId], references: [id])
+  member Member @relation(fields: [memberId], references: [id])
+
+  @@unique([tripId, memberId])
+}
+
+model Setting {
+  key   String @id
+  value String
+}
